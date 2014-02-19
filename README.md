@@ -3,6 +3,8 @@ Sitecore-Deployment-Helpers
 
 Small deployment helper pages for such things as: installing packages, publishing, etc.
 
+__InstallModules.aspx__ will install modules from %datafolder%/packages. Modules and order are specified in a query string parameter called 'modules'
+
 __InstallPackages.aspx__ will install all packages found under /sitecore/admin/packages folder.
 
 __Publish.aspx__ will publish everything from master to the web database.
