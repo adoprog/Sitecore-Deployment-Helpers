@@ -60,10 +60,6 @@
           text = ex.HistoryPath;
           throw;
         }
-        finally
-        {
-          UpdateHelper.SaveInstallationMessages(entries, text);
-        }
 
         result = text;
       }
