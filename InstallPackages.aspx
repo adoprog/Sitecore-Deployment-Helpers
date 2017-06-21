@@ -7,12 +7,13 @@
 <%@ Import Namespace="Sitecore.Data.Proxies" %>
 <%@ Import Namespace="Sitecore.SecurityModel" %>
 <%@ Import Namespace="Sitecore.Update" %>
+<%@ Import Namespace="Sitecore.Update.Metadata" %>
 <%@ Import Namespace="Sitecore.Update.Installer" %>
 <%@ Import Namespace="Sitecore.Update.Installer.Exceptions" %>
 <%@ Import Namespace="Sitecore.Update.Installer.Installer.Utils" %>
 <%@ Import Namespace="Sitecore.Update.Installer.Utils" %>
 <%@ Import Namespace="Sitecore.Update.Utils" %>
-
+<%@ Import Namespace="Sitecore.Update.Wizard" %>
 <%@ Language=C# %>
 <HTML>
    <script runat="server" language="C#">
@@ -38,7 +39,7 @@
 
     protected static string Install(string package)
     {
-      var log = LogManager.GetLogger("LogFileAppender");
+      var logger = LogManager.GetLogger("LogFileAppender");
       string result;
       using (new ShutdownGuard())
       {
@@ -48,24 +49,38 @@
           Mode = InstallMode.Install,
           Path = package
         };
-        string text = null;
+        string historyPath = null;
         List<ContingencyEntry> entries = null;
         try
         {
-          entries = UpdateHelper.Install(installationInfo, log, out text);
+          entries = UpdateHelper.Install(installationInfo, logger, out historyPath);
+          string error = string.Empty;
+          logger.Info("Executing post installation actions.");
+          MetadataView metadata = PreviewMetadataWizardPage.GetMetadata(package, out error);
+
+          if (string.IsNullOrEmpty(error))
+          {
+              DiffInstaller diffInstaller = new DiffInstaller(UpgradeAction.Upgrade);
+              using (new SecurityDisabler())
+              {
+                  diffInstaller.ExecutePostInstallationInstructions(package, historyPath, installationInfo.Mode, metadata, logger, ref entries);
+              }
+          }
+          else
+          {
+              logger.Info("Post installation actions error.");
+              logger.Error(error);
+              throw new Exception(string.Format("Post installation actions error: {0}", error));
+          }
         }
         catch (PostStepInstallerException ex)
         {
           entries = ex.Entries;
-          text = ex.HistoryPath;
+          historyPath = ex.HistoryPath;
           throw;
         }
-        finally
-        {
-          UpdateHelper.SaveInstallationMessages(entries, text);
-        }
 
-        result = text;
+        result = historyPath;
       }
 
       return result;
