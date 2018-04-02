@@ -47,6 +47,7 @@
         {
           Action = UpgradeAction.Upgrade,
           Mode = InstallMode.Install,
+          ProcessingMode = ProcessingMode.All, // Remove this line on Sitecore versions below 8.2 Update-2 because it will not compile.
           Path = package
         };
         string historyPath = null;
