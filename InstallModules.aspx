@@ -13,11 +13,18 @@
 <%@ Import namespace="Sitecore.Install.Framework" %>
 <%@ Import namespace="Sitecore.Install.Items" %>
 <%@ Import namespace="Sitecore.Install" %>
-
+<%@ Import Namespace="Sitecore.Install.Security" %>
 
 <%@  Language="C#" %>
 <html>
 <script runat="server" language="C#">
+    public class DummyAccountInstallerEvents : IAccountInstallerEvents
+    {
+        public void ShowWarning(string message, string warningType)
+        {
+        }
+    }
+
     public void Page_Load(object sender, EventArgs e)
     {
         var files = WebUtil.GetQueryString("modules").Split('|');
@@ -48,6 +55,12 @@
         var log = LogManager.GetLogger("LogFileAppender");
         string result = string.Empty;
         
+        IProcessingContext accountContext = new SimpleProcessingContext();
+        IAccountInstallerEvents accountEvents = new DummyAccountInstallerEvents();
+        accountContext.AddAspect<IAccountInstallerEvents>(accountEvents);
+        
+        new Installer().InstallSecurity(package, accountContext);
+
         IProcessingContext context = new SimpleProcessingContext();
         IItemInstallerEvents instance = new DefaultItemInstallerEvents(new BehaviourOptions(InstallMode.Merge,MergeMode.Merge ));
         context.AddAspect<IItemInstallerEvents>(instance);
